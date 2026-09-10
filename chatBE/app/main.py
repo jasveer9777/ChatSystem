@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .database import engine, Base
+from . import models  # noqa: F401 -- ensures models are registered with Base
 from .routers import users, conversations, messages, ws_chat, user_list
 
 app = FastAPI(title="Chat System API")
@@ -20,16 +22,12 @@ app.include_router(ws_chat.router)
 app.include_router(user_list.router)
 
 
+@app.on_event("startup")
+async def on_startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
 @app.get("/")
 async def root():
-    return {"message": "ChatSystem API is running"}
-
-@app.get("/info")
-async def info():
-    return
-
-
-# for demo 
-# DATABASE_URL=sqlite+aiosqlite:///./chat.db
-
-# SECRET_KEY=ad6b6f1ef765f7eddf0570f75ccabd34e26f9b84294c980a2f1fa13688a2d97b
+    return {"message": "Chat System API is running"}
