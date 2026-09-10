@@ -7,7 +7,11 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+connect_args = {}
+if DATABASE_URL and DATABASE_URL.startswith("postgresql+asyncpg"):
+    connect_args = {"ssl": "require"}
+
+engine = create_async_engine(DATABASE_URL, echo=False, connect_args=connect_args)
 
 AsyncSessionLocal = sessionmaker(
     bind=engine,
