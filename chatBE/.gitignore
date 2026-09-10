@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build / output
+dist/
+build/
+out/
+target/
+
+# Logs
+*.log
+logs/
+
+# IDE / editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Python
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Secrets / credentials
+*.pem
+*.key
+credentials.json
+secrets.json
