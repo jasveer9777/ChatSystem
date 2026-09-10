@@ -16,8 +16,6 @@ async def websocket_endpoint(
     conversation_id: str,
     token: str = Query(...),
 ):
-    # Authenticate using the token passed as a query param
-    # (browsers can't set custom headers on WebSocket handshakes easily)
     payload = decode_access_token(token)
     if payload is None:
         await websocket.close(code=4001)
@@ -28,7 +26,6 @@ async def websocket_endpoint(
         await websocket.close(code=4001)
         return
 
-    # Verify the user is actually a participant of this conversation
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(ConversationParticipant).where(
@@ -46,12 +43,14 @@ async def websocket_endpoint(
         while True:
             raw_data = await websocket.receive_text()
             data = json.loads(raw_data)
-            content = data.get("content")
 
+            if data.get("type") == "ping":
+                continue  # heartbeat only, not a real message
+
+            content = data.get("content")
             if not content:
                 continue
 
-            # Persist the message
             async with AsyncSessionLocal() as db:
                 new_message = Message(
                     conversation_id=conversation_id,
@@ -62,7 +61,6 @@ async def websocket_endpoint(
                 await db.commit()
                 await db.refresh(new_message)
 
-            # Broadcast to everyone else in the conversation
             await manager.broadcast(
                 conversation_id,
                 {
