@@ -32,14 +32,6 @@ async def on_startup():
 async def root():
     return {"message": "Chat System API is running"}
 
-from sqlalchemy import text
 
 
-@app.get("/debug/tables")
-async def debug_tables():
-    async with engine.connect() as conn:
-        result = await conn.execute(
-            text("SELECT tablename FROM pg_tables WHERE schemaname='public';")
-        )
-        tables = [row[0] for row in result.fetchall()]
-    return {"tables": tables}
+
