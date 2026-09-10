@@ -9,7 +9,7 @@ app = FastAPI(title="Chat System API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","https://chat-system-git-master-jp-b615.vercel.app/login"],
+    allow_origins=["http://localhost:3000","https://chat-system-git-master-jp-b615.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
