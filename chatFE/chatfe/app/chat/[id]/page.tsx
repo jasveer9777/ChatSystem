@@ -40,27 +40,61 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!user || !conversationId) return;
+
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const wsUrl = process.env.NEXT_PUBLIC_API_URL!.replace(/^http/, "ws");
-    const ws = new WebSocket(
-      `${wsUrl}/ws/conversations/${conversationId}?token=${token}`
-    );
+    let ws: WebSocket | undefined;
+    let heartbeatInterval: ReturnType<typeof setInterval> | undefined;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | undefined;
+    let unmounted = false;
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setMessages((prev) => [...prev, data]);
-    };
-    ws.onerror = () => setError("WebSocket connection error");
+    function connect() {
+      const wsUrl = process.env.NEXT_PUBLIC_API_URL!.replace(/^http/, "ws");
+      const socket = new WebSocket(
+        `${wsUrl}/ws/conversations/${conversationId}?token=${token}`
+      );
+      ws = socket;
 
-    wsRef.current = ws;
+      socket.onopen = () => {
+        heartbeatInterval = setInterval(() => {
+          if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: "ping" }));
+          }
+        }, 25000);
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        setMessages((prev) => [...prev, data]);
+      };
+
+      socket.onclose = () => {
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        if (!unmounted) {
+          reconnectTimeout = setTimeout(connect, 2000);
+        }
+      };
+
+      socket.onerror = () => {
+        socket.close();
+      };
+
+      wsRef.current = socket;
+    }
+
+    connect();
 
     return () => {
-      ws.onmessage = null;
-      ws.onerror = null;
-      ws.onclose = null;
-      ws.close();
+      unmounted = true;
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
+      if (wsRef.current) {
+        wsRef.current.onmessage = null;
+        wsRef.current.onerror = null;
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
     };
   }, [user, conversationId]);
 
