@@ -1,0 +1,16 @@
+name: chatsystem
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - fastapi
+      - uvicorn[standard]
+      - sqlalchemy
+      - python-dotenv
+      - passlib[bcrypt]
+      - bcrypt==4.1.2
+      - PyJWT
