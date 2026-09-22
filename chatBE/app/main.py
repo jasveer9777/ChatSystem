@@ -16,7 +16,7 @@ app = FastAPI(
 # allows the Vite dev server (different origin/port) to call this API from the browser
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173","https://chatsystem-fe.vercel.app/"],
+    allow_origins=["http://localhost:5173","https://chatsystem-fe.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
