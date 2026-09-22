@@ -1,15 +1,17 @@
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.auth import get_current_user, security
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES, JWT_ALGORITHM, JWT_SECRET
 from app.database import SessionLocal
-from app.models import User
+from app.models import RevokedToken, User
 from app.schemas import UserCreate, UserLogin, UserRead
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -29,8 +31,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(username: str, user_id: int) -> str:
     """Create a JWT token that represents a valid login session."""
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "username": username, "exp": expire}
+    payload = {"sub": str(user_id), "username": username, "exp": expire, "jti": str(uuid4())}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
 
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
@@ -91,6 +94,26 @@ def login_user(user: UserLogin) -> dict[str, str]:
 @router.get("/me", response_model=UserRead)
 def get_me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.post("/logout")
+def logout_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, str]:
+    payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    jti = payload["jti"]
+    expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+
+    db: Session = SessionLocal()
+    try:
+        if not db.query(RevokedToken).filter(RevokedToken.jti == jti).first():
+            db.add(RevokedToken(jti=jti, expires_at=expires_at))
+            db.commit()
+    finally:
+        db.close()
+
+    return {"detail": "Logged out"}
 
 
 @router.get("/", response_model=list[UserRead])

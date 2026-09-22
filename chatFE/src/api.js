@@ -26,6 +26,10 @@ export function getCurrentUser() {
   return api.get("/users/me");
 }
 
+export function logout() {
+  return api.post("/users/logout");
+}
+
 export function listUsers() {
   return api.get("/users/");
 }

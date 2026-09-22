@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { getCurrentUser, login as loginRequest } from "../api";
+import { getCurrentUser, login as loginRequest, logout as logoutRequest } from "../api";
 
 const AuthContext = createContext(null);
 
@@ -27,7 +27,12 @@ export function AuthProvider({ children }) {
     setUser(me);
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await logoutRequest();
+    } catch {
+      // token may already be expired/invalid server-side; clear local state regardless
+    }
     localStorage.removeItem("access_token");
     setUser(null);
   }

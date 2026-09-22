@@ -32,3 +32,13 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class RevokedToken(Base):
+    """Tracks JWTs that were explicitly logged out before their natural expiry."""
+
+    __tablename__ = "revoked_tokens"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    jti: Mapped[str] = mapped_column(String(36), unique=True, index=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+

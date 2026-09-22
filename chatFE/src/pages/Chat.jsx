@@ -86,8 +86,9 @@ export default function Chat() {
               {connected ? "Online" : "Connecting..."}
             </div>
           </div>
-          <button className="logout-btn" onClick={logout} title="Log out">
-            ⎋
+          <button className="logout-btn" onClick={logout} type="button">
+            <span className="logout-icon" aria-hidden="true">↪</span>
+            Logout
           </button>
         </div>
 
